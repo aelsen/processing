@@ -10,68 +10,60 @@
  * 
  */
  
+
+ 
+// Constants
+int width = 630;
+int height = 480;
+
+float vel_range = 5.0;
+float vel_min = 5.0;
+
+int s_alpha = 70;
+int s_beta = 50;
+int wolf_spacing = 5;
+
 // Variables
 float t_del;
 int y_del;
 float vel;
- 
-// Constants
-int win_width = 630;
-int win_height = 480;
-
-float vel_range = 5.0;
-float vel_min = 2.0;
-
-int s_alpha = 90;
-int s_beta = 70;
-int wolf_spacing = 5;
-
-
-
-
 
 GrassManager grassManager;
 WolfAlpha w_a;
 WolfBeta w_b, w_c, w_d, w_e;
 
-
-void settings(){
-  size(win_width, win_height, P3D);
-}
-
 void setup(){
+  size(640, 480, P3D);
   ortho();
   
   t_del = 0;
   
   grassManager = new GrassManager();
+
   // Initialize wolves
   w_a = new WolfAlpha(0, 0);
-  w_b = new WolfBeta(s_alpha/2 + s_beta/2);
-  w_c = new WolfBeta(s_alpha/2 + s_beta*2);
-  //for (Wolf wolf in [w_b, w_c, w_d, w_e]){
-  //  wolf = new Wolf(0, 0, 75, 75);
-  //}
+  w_b = new WolfBeta(s_alpha/2 + s_beta/2 + wolf_spacing);
+  w_c = new WolfBeta(s_alpha/2 + s_beta/2*3 + wolf_spacing);
+  w_d = new WolfBeta(-1*(s_alpha/2 + s_beta/2 + wolf_spacing));
+  w_e = new WolfBeta(-1*(s_alpha/2 + s_beta/2*3 + wolf_spacing));
 }
 
 void draw() {
   lights();  
-  background(0, 200, 150);
+  background(0, 150, 100);
   
   // Movement
   //vel = vel_max * sin(t_del*2*PI) + vel_max*2;
   //println("t_del: ", t_del, ", vel: ", vel);
-  vel = vel_range*sin(t_del) + +vel_range + vel_min;
+  vel = vel_range*sin(t_del) + vel_range + vel_min;
   y_del += vel;
-  
-  //println("y_del: ", y_del);
   
   camera(0.0, y_del, 220.0, // eyeX, eyeY, eyeZ
          0.0, y_del, 0.0, // centerX, centerY, centerZ
          0.0, 1.0, 0.0); // upX, upY, upZ
          
   // Draw grass objects
-  stroke(0, 180, 125);
+  stroke(0, 120, 85);
   strokeWeight(8);
   
   grassManager.generateGrass(y_del);
@@ -82,15 +74,16 @@ void draw() {
   w_a.display();
   w_b.display();
   w_c.display();
+  w_d.display();
+  w_e.display();
+
+  int wolf_y_del = y_del + 30;
   
-  //stroke(255);
-  //line(-100, 0, 0, 100, 0, 0);
-  //line(0, -100, 0, 0, 100, 0);
-  //line(0, 0, -100, 0, 0, 100);
-  
-  w_a.move(y_del);
-  w_b.move(y_del, vel);
-  w_c.move(y_del, vel);
+  w_a.move(wolf_y_del);
+  w_b.move(wolf_y_del, vel);
+  w_c.move(wolf_y_del, vel);
+  w_d.move(wolf_y_del, vel);
+  w_e.move(wolf_y_del, vel);
   
   t_del += 0.01;
 }
@@ -138,17 +131,21 @@ class WolfBeta extends Wolf{
   }
   
   void move (int i_ypos, float vel) {
-    this.ypos = (int)(i_ypos - spacing/4);
-    this.xpos = (int)(spacing + spacing*(vel/(vel_range*2 + vel_min)));
-    println("spacing: ", this.xpos);
+    float x_coeff = (vel-vel_min)/(vel_range*2) / 2.0;
+    float y_coeff = (vel-vel_min)/(vel_range*2) / 2.0;
+    this.ypos = (int)(i_ypos - abs(spacing*(.5+y_coeff)));
+    this.xpos = (int)(spacing*(1+x_coeff));
+    // println("vel:", vel, 
+    //   ", co: ", ((vel-vel_min)/(vel_range*2)), 
+    //   ", spacing: ", this.xpos);
   }
 }
 
 class Grass
 {
   // Constants
-  float len = 40.0;
-  float spacing = 25;
+  float len = 30.0;
+  float spacing = 20;
   float angle = PI * (7.0/24.0);
   int num_blades = 3;
   
@@ -204,7 +201,7 @@ class GrassManager
 {
   // Constants
   int num_grass = 4;            // # of grass objects existing simultaneously
-  float spacing_scale = .95;      // approx vertical window height spacing between grass objects
+  float spacing_scale = .75;      // approx vertical window height spacing between grass objects
   float spacing_edges = 80;
   float spacing;
   
@@ -214,7 +211,7 @@ class GrassManager
   
   GrassManager(){
     grasses = new Grass[num_grass];
-    spacing = win_height * spacing_scale;
+    spacing = height * spacing_scale;
   }
   
   void displayGrass(){
@@ -244,9 +241,9 @@ class GrassManager
     
     // If not, create new grass object.
     if(!isNearby){
-     float xpos = random(-win_width/2.0 + spacing_edges, 
-       win_width/2.0 - spacing_edges);
-     float ypos = spacing - random(win_height - spacing) + y_del;
+     float xpos = random(-width/2.0 + spacing_edges, 
+       width/2.0 - spacing_edges);
+     float ypos = spacing - random(height - spacing) + y_del;
      Grass newGrass = new Grass(xpos, ypos);
      pushGrass(newGrass);
     }

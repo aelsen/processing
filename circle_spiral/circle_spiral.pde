@@ -1,5 +1,14 @@
 /* OpenProcessing Tweak of *@*http://www.openprocessing.org/sketch/156498*@* */
 /* !do not delete the line above, required for linking your tweak if you upload again */
+/**
+ * circle_spiral
+ * Antonia Elsen, 2016
+ * aelsen @ github, http://blacksign.al
+ * 
+ * Processing practice sketch.
+ * Modification of animated circles.
+ * 
+ */
 float r, R;
 int numBalls = 255;
 float step;
@@ -30,8 +39,6 @@ void setup() {
     }
 
 }
-
-
 
 int numFrames = 600;
 int numTrans = numFrames;
