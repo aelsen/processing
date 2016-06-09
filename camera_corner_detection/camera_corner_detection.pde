@@ -3,9 +3,11 @@ import processing.video.*;
 import java.awt.*;
 import controlP5.*;
 
+import org.opencv.imgproc.*;
+
 Capture videoInput;
 PImage videoDebugA, videoDebugB;
-OpenCV opencv;
+OpenCV ocv;
 
 ControlP5 cp5;
 
@@ -17,21 +19,36 @@ static final int h = 300;
 static final int s_w = 300;
 static final int s_h = 60;
 
+int s_brightness = 0;
+int s_contrast = 1;
 int s_threshold = 75;
 
 void setup() {
   size(800, 680);
-  surface.setSize(w*2, h*2 + s_h);
+  surface.setSize(w*2, h*2 + s_h*2);
   videoInput = new Capture(this, w, h);
-  opencv = new OpenCV(this, w, h);
+  ocv = new OpenCV(this, w, h);
 
   cp5 = new ControlP5(this);
+  cp5.addSlider("s_contrast")
+   .setPosition(w/2 - s_w/2, h*2 + 15)
+   .setSize(s_w, 30)
+   .setRange(0,4)
+   .setValue(s_contrast)
+   ; 
+   cp5.addSlider("s_brightness")
+   .setPosition(w/2 - s_w/2, h*2 + 15+s_h)
+   .setSize(s_w, 30)
+   .setRange(-255,255)
+   .setValue(s_brightness)
+   ; 
   cp5.addSlider("s_threshold")
-   .setPosition(w - s_w/2, h*2 + 15)
+   .setPosition(w/2*3 - s_w/2, h*2 + 15+s_h)
    .setSize(s_w, 30)
    .setRange(0,255)
-   .setValue(75)
-   ; 
+   .setValue(s_threshold)
+   ;
+
 
   videoInput.start();
 }
@@ -41,30 +58,30 @@ void draw() {
   if (videoInput.available() == false){
     // println("No video available.");
   }
-  opencv.loadImage(videoInput);
+  ocv.loadImage(videoInput);
 
   
 
   // filter frame before finding contours
-  opencv.gray();
-  opencv.brightness(-20);
-  opencv.contrast(1.5);
+  ocv.gray();
+  ocv.brightness(s_brightness);
+  ocv.contrast(s_contrast);
 
-  videoDebugA = opencv.getOutput().copy();
+  videoDebugA = ocv.getOutput().copy();
 
   // filter further, find contours
-  opencv.threshold(s_threshold);
+  ocv.threshold(s_threshold);
 
-  contours = opencv.findContours();
+  contours = ocv.findContours();
 
-  videoDebugB = opencv.getOutput();
+  videoDebugB = ocv.getOutput();
 
 
   // draw frames
   image(videoInput,         0, 0);
   image(videoDebugA,        w, 0);
   image(videoDebugB,        0, h);
-  image(opencv.getOutput(), w, h);
+  image(ocv.getOutput(),    w, h);
 
   noFill();
   strokeWeight(1);
@@ -73,7 +90,8 @@ void draw() {
     stroke(0, 255, 0);
     ArrayList<PVector> lines = contour.getPoints();
     for (int p = 1; p < lines.size(); p++){
-      line(lines.get(p-1).x + w,  lines.get(p-1).y + h, 
+      line(
+        lines.get(p-1).x + w,     lines.get(p-1).y + h, 
         lines.get(p).x + w,       lines.get(p).y + h);
     }
     
@@ -86,11 +104,26 @@ void draw() {
   }
 }
 
+
+// Callbacks / Event Handlers
+void captureEvent(Capture c) {
+  c.read();
+}
+
 void slider(float data) {
   s_threshold = (int)data;
   println("data", data);
 }
 
-void captureEvent(Capture c) {
-  c.read();
+// Custom Functions
+
+void harrisCornerDetection(PImage src) {
+  int blockSize = 2;
+  int apertureSize = 3;
+  double k = 0.04;
+
+  // cornerHarris(src, dst, blockSize, apertureSize, k, BORDER_DEFAULT );
+
+
 }
+

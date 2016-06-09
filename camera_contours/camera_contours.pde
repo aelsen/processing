@@ -12,7 +12,8 @@ ControlP5 cp5;
 ArrayList<Contour> contours;
 ArrayList<Contour> polygons;
 
-// Image, slider widths, heights
+// Window, frame size constants
+
 static final int w = 400;
 static final int h = 300;
 static final int s_w = 300;
@@ -29,7 +30,9 @@ void setup() {
   videoInput = new Capture(this, w, h);
   ocv = new OpenCV(this, w, h);
 
-  // Initialize Sliders
+
+  // Initialize sliders
+
   cp5 = new ControlP5(this);
   cp5.addSlider("s_contrast")
    .setPosition(w/2 - s_w/2, h*2 + 15)
@@ -61,8 +64,6 @@ void draw() {
   }
   ocv.loadImage(videoInput);
 
-  
-
   // filter frame before finding contours
   ocv.gray();
   ocv.brightness(s_brightness);
@@ -76,7 +77,6 @@ void draw() {
   contours = ocv.findContours();
 
   videoDebugB = ocv.getOutput();
-
 
   // draw frames
   image(videoInput,         0, 0);
@@ -116,5 +116,3 @@ void slider(float data) {
   s_threshold = (int)data;
   println("data", data);
 }
-
-
