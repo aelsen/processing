@@ -1,6 +1,7 @@
 import gab.opencv.*;
 import processing.video.*;
 import java.awt.*;
+import java.util.Arrays;
 import controlP5.*;
 
 import java.nio.*;
@@ -15,7 +16,7 @@ Mat imageMat, mRGBA, mGRAY;
 OpenCV ocv;
 FeatureDetector fd;
 MatOfKeyPoint mKeyPoints;
-KeyPoint[]  aKeyPoints;
+ArrayList<KeyPoint> aKeyPoints;
 
 ControlP5 cp5;
 
@@ -31,25 +32,22 @@ static final int slider_h = 60;
 
 float s_contrast = 1.5;
 int s_brightness = 0;
-int s_threshold = 254;
+int s_threshold = 100;
 
-static boolean captureImage = true;
+static boolean captureVideo = true;
 static int limit = 2000;
 
 void setup() {
   size(800, 680);
   surface.setSize(win_w, win_h + slider_h*2);
 
-  videoInput = new Capture(this, img_w, img_h);
   ocv = new OpenCV(this, img_w, img_h);
   fd = FeatureDetector.create(FeatureDetector.FAST);
 
   mRGBA = new Mat(height, width, CvType.CV_8UC4);
   mGRAY = new Mat(height, width, CvType.CV_8UC1);
   mKeyPoints = new MatOfKeyPoint();
-  
-  // descriptorExtractor=DescriptorExtractor.create(2);//SURF = 2
-  // descriptorMatcher=DescriptorMatcher.create(6); //BRUTEFORCE_SL2 = 6**
+  aKeyPoints = new ArrayList<KeyPoint>();
 
   // Add filter sliders
   cp5 = new ControlP5(this);
@@ -68,16 +66,29 @@ void setup() {
   cp5.addSlider("s_threshold")
    .setPosition((win_w - img_w)/2*3 - slider_w/2, img_h + 15+slider_h)
    .setSize(slider_w, 30)
-   .setRange(0,255)
-   .setValue(254)
+   .setRange(0,100)
+   .setValue(100)
    ;
 
-  videoInput.start();
+
+  if (captureVideo){
+    videoInput = new Capture(this, img_w, img_h);
+    videoInput.start();
+  }
+  else{
+    imageBefore = loadImage("test.jpg");
+  }
+  
 }
 
 void draw() {
-  ocv.loadImage(videoInput);
-  // imageBefore= ocv.getOutput().copy(); 
+  if (captureVideo){
+    imageBefore = videoInput.copy();
+    ocv.loadImage(imageBefore);
+  }
+  else{
+    ocv.loadImage(imageBefore.copy());
+  }
 
   // Filter image
   ocv.brightness(s_brightness);
@@ -88,38 +99,44 @@ void draw() {
 
   // Run algorithm
   fd.detect(mGRAY, mKeyPoints);
-  // imageMat.convertTo(imageMat, CvType.CV_8UC1);
-  // imageMat = harrisCornerDetection(imageMat);
+
+  aKeyPoints = new ArrayList<KeyPoint>(mKeyPoints.toList());
+  // if (aKeyPoints.size() > 0){
+  //   println("Obtained ", aKeyPoints.size(), "keypoints.");}
+
+  float max_response = 0;
+  for (KeyPoint kp : aKeyPoints){
+    if(kp.response > max_response){
+      max_response = kp.response;
+    }
+  }
+
+  // Filtering methods: Chose one
+  // 1. Sort by response, truncate ArrayList of keypoints after %s_threshold pts.
+  // aKeyPoints = sortKeypoints(aKeyPoints); 
+  // 2. Delete all lower than a %s_threshold response.
+  aKeyPoints = truncateKeypoints(aKeyPoints, max_response); 
 
   // Draw frames
-  image(videoInput,        0, 0);
+  image(imageBefore,        0, 0);
   image(imageAfter,         win_w - img_w, 0);
-  
+
   // Draw corners
   //  We could use Features2d.drawKeypoints(), but here we're
   //  choosing to draw the PImages instead.
-
-  aKeyPoints = mKeyPoints.toArray();
-  if (aKeyPoints.length > 0){
-    println("Obtained ", aKeyPoints.length, "keypoints.");}
-  // aKeyPoints = sortKeypoints(aKeyPoints);
+  noFill();
+  stroke(255, 0, 0);
+  strokeWeight(1);
 
   int a = 0;
   float x, y;
-  while ((a < aKeyPoints.length) && (a < limit)){
-    x = (float)aKeyPoints[a].pt.x;
-    y = (float)aKeyPoints[a].pt.y;
-    // println("Keypoint ", x, ", ", y);
+  while (a < aKeyPoints.size()){
+    x = (float)aKeyPoints.get(a).pt.x;
+    y = (float)aKeyPoints.get(a).pt.y;
     ellipse((win_w - img_w) + x, y,
       5, 5);
     a++;
   }
-
-  noFill();
-  stroke(255, 0, 0);
-  strokeWeight(1);
-  
-  
 }
 
 
@@ -130,12 +147,71 @@ void captureEvent(Capture c) {
 
 void slider(float data) {
   s_threshold = (int)data;
-  println("data", data);
 }
 
-KeyPoint[] sortKeypoints(KeyPoint[] input){
-  KeyPoint[] output = new KeyPoint[s_threshold];
-  // for 
+// Keypoint response threshold filters
+
+ArrayList<KeyPoint> truncateKeypoints(ArrayList<KeyPoint> input, float max){
+  ArrayList<KeyPoint> output = new ArrayList<KeyPoint>();
+  float threshold = max*(s_threshold/100.0);
+
+  for (KeyPoint kp : input){
+    if (kp.response >= threshold){
+      output.add(kp);
+    }
+  }
+
   return output;
+}
+
+
+// QuickSort functions
+ArrayList<KeyPoint> sortKeypoints(ArrayList<KeyPoint> input){
+  int aSize = (int)(input.size()*(s_threshold/100.0));
+  ArrayList<KeyPoint> output = new ArrayList<KeyPoint>();
+
+  if (input == null || input.size() == 0) {
+        return input;
+  }
+
+  ArrayList<KeyPoint> sorted = quickSort(input, 0, input.size() - 1);
+  output = new ArrayList<KeyPoint>(
+    sorted.subList(0, aSize));
+  return output;
+}
+
+ArrayList<KeyPoint> quickSort(ArrayList<KeyPoint> array, int lowerIndex, int higherIndex) {
+     
+    int i = lowerIndex;
+    int j = higherIndex;
+
+    float pivot = array.get(lowerIndex+(higherIndex-lowerIndex)/2).response;
+
+    while (i <= j) {
+        while (array.get(i).response < pivot) {
+            i++;
+        }
+        while (array.get(j).response > pivot) {
+            j--;
+        }
+        if (i <= j) {
+            swapElements(array, i, j);
+            i++;
+            j--;
+        }
+    }
+
+    if (lowerIndex < j)
+        array = quickSort(array, lowerIndex, j);
+    if (i < higherIndex)
+        array = quickSort(array, i, higherIndex);
+
+    return array;
+}
+
+void swapElements(ArrayList<KeyPoint> array, int i, int j) {
+    KeyPoint temp = array.get(i);
+    array.add(i, array.get(j));
+    array.add(j, temp);
 }
 
