@@ -58,10 +58,6 @@ void setup() {
 }
 
 void draw() {
-  // scale(2);
-  if (videoInput.available() == false){
-    // println("No video available.");
-  }
   ocv.loadImage(videoInput);
 
   // filter frame before finding contours

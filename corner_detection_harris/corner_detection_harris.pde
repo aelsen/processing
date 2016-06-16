@@ -30,7 +30,7 @@ int s_brightness = 0;
 int s_threshold = 254;
 
 
-static boolean captureImage = false;
+static boolean captureImage = true;
 static int limit = 2000;
 
 void setup() {
@@ -86,7 +86,6 @@ void draw() {
   imageMat = harrisCornerDetection(imageMat);
 
   // Draw frames
-
   image(imageBefore,        0, 0);
   image(imageAfter,        win_w - img_w, 0);
   
@@ -154,6 +153,7 @@ void getSnapshot(){
       imageBefore.save(filename);
       println("filename:", filename);
     }
+    videoInput.stop();
   }
 }
 
