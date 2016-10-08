@@ -50,6 +50,7 @@ int mode = 0; // ( 0:black, 1:brightness, 2:white)
 
 // Controls
 boolean toggleFlag;
+boolean b_displayBounds;
 boolean b_hIndexAscending;
 boolean b_vIndexAscending;
 boolean b_hValueAscending;
@@ -76,7 +77,7 @@ void setup() {
   println("----------");
 
   surface.setResizable(true);
-  surface.setSize(img.width, img.height + (s_h*2 + b*3));
+  surface.setSize(img.width, img.height + (s_h*3 + b*4));
 
   setup_controls();
   image(img, 0, 0);
@@ -103,6 +104,14 @@ void setup_controls(){
   .setRange(0,255)
   .setValue(s_dark)
   ; 
+
+
+  cp5.addToggle("b_displayBounds")
+   .setPosition(width/4 - s_w/2, height - (s_h + b)*3)
+   .setSize(s_w, s_h)
+   .setValue(false)
+   ;
+
   cp5.addToggle("b_vIndexAscending")
    .setPosition(width/4 - s_w/2, height - (s_h + b)*2)
    .setSize(s_w, s_h)
@@ -118,6 +127,7 @@ void setup_controls(){
 void draw() {
   if(!runOnce){return;}
   // println("Bright:", s_bright, ", dark:", s_dark);
+  sorter.displayBounds = b_displayBounds;
   sorter.vIndexAscending = b_vIndexAscending;
   sorter.vValueAscending = b_vValueAscending;
   sorter.sortImage(s_bright, s_dark);
@@ -144,6 +154,7 @@ void toggle(boolean toggleState) {
 
 class Sorter
 {
+  boolean displayBounds = false;
   boolean sortVertical = true;         // True: sort rows.
   boolean sortHorizontal = false;
   boolean hIndexAscending = true;
@@ -207,7 +218,9 @@ class Sorter
       sortRows(threshold_u, threshold_l);
     }
 
-    drawVerticalBounds();
+    if (displayBounds){
+      drawVerticalBounds();
+    }
 
     println("Draw bounds:", drawVerticalBounds);
     println("High bounds:", high_bounds);
