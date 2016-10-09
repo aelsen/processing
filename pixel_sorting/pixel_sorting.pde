@@ -28,8 +28,8 @@ import controlP5.*;
 // Window, frame size constants
 // static final int w = 400;
 // static final int h = 300;
-static final int s_w = 150;
-static final int s_h = 30;
+static  int s_w = 150;
+static  int s_h = 30;
 static final int b = 15;
 
 // Control variables
@@ -40,7 +40,7 @@ PImage img;
 boolean runOnce = false;
 
 // User variables -------------------------------------------
-float scale = 15;                          // percent scale
+float scale = 20;                          // percent scale
 
 String img_filename = "test_m";
 String img_ext = "jpg";
@@ -51,6 +51,7 @@ int mode = 0; // ( 0:black, 1:brightness, 2:white)
 // Controls
 boolean toggleFlag;
 boolean b_displayBounds;
+boolean b_randomSelect;
 boolean b_hIndexAscending;
 boolean b_vIndexAscending;
 boolean b_hValueAscending;
@@ -59,6 +60,8 @@ boolean b_vValueAscending;
 int intvalue;
 int s_bright = 250;
 int s_dark = 5;
+int s_randomSpread = 20;
+int s_randomWidth = 10;
 
 void setup() {
   size(800, 680);
@@ -91,40 +94,15 @@ void setup() {
     img);
 }
 
-void setup_controls(){
-  cp5.addSlider("s_bright")
-  .setPosition(width/4*3 - s_w/2, height - (s_h + b)*2)
-  .setSize(s_w, s_h)
-  .setRange(0,255)
-  .setValue(s_bright)
-  ;
-  cp5.addSlider("s_dark")
-  .setPosition(width/4*3 - s_w/2, height - (s_h + b))
-  .setSize(s_w, s_h)
-  .setRange(0,255)
-  .setValue(s_dark)
-  ; 
 
-
-  cp5.addToggle("b_displayBounds")
-   .setPosition(width/4 - s_w/2, height - (s_h + b)*3)
-   .setSize(s_w, s_h)
-   .setValue(false)
-   ;
-
-  cp5.addToggle("b_vIndexAscending")
-   .setPosition(width/4 - s_w/2, height - (s_h + b)*2)
-   .setSize(s_w, s_h)
-   .setValue(true)
-   ;
-  cp5.addToggle("b_vValueAscending")
-   .setPosition(width/4 - s_w/2, height - (s_h + b))
-   .setSize(s_w, s_h)
-   .setValue(false)
-   ;
-}
 
 void draw() {
+  s_w = width / 4;
+  for (Controller c : cp5.getAll(Slider.class)){
+    c.setSize(s_w, s_h);
+  }
+
+
   if(!runOnce){return;}
   // println("Bright:", s_bright, ", dark:", s_dark);
   sorter.displayBounds = b_displayBounds;
@@ -176,19 +154,19 @@ class Sorter
   Sorter(
     // TODO: implement sortVertical and horizontal (and diagonal?)
     // TODO: Map for options
-    boolean _sortVertical,
-    boolean _sortHorizontal,
-    boolean _smooth, 
-    boolean _original,
-    String _mode, 
-    PImage _img){
+    boolean sortVertical,
+    boolean sortHorizontal,
+    boolean smooth, 
+    boolean original,
+    String mode, 
+    PImage img){
 
-    sortVertical = _sortVertical;
-    sortHorizontal = _sortHorizontal;
-    smooth = _smooth;
-    original = _original;
-    mode = _mode;
-    setInput(_img);
+    this.sortVertical = sortVertical;
+    this.sortHorizontal = sortHorizontal;
+    this.smooth = smooth;
+    this.original = original;
+    this.mode = mode;
+    setInput(img);
   }
 
   void sortImage(int threshold_u, int threshold_l){
@@ -484,6 +462,127 @@ class Sorter
     // TODO: check against dictionary entries
     mode = _mode;
   }
-
   
 }
+
+class ControlGrid{
+  ControlP5 cp5;
+  Sizer sizer;
+  ControlGrid(){
+    sizer = new Sizer("master_sizer", false, 20);
+    setup_controls();
+  }
+
+  class Sizer(){
+    // Can contain controls, or remain empty.
+    // If empty, acts as a spacer (border)
+    // If border = -1, scales. 
+
+    String name = "";
+    booleanvertical = true;
+    int border = -1; 
+
+    Sizer(String name, boolean vertical, int border){
+      List<Object> children;
+      this.name = name;
+      this.vertical = vertical;
+      this.border = border;
+    }
+
+    void addItem(Object obj){
+      children.add(obj);
+    }
+
+    void removeItem(int index){
+      if (index >= children.size()){return;}
+      children.remove(index);
+    }
+  }
+ 
+  void setup_controls(){
+    
+    Toggle displayBounds = cp5.addToggle("b_displayBounds")
+      .setValue(false)
+      ;
+    Slider bright = cp5.addSlider("s_bright")
+      .setRange(0,255)
+      .setValue(s_bright)
+      ;
+    Slider dark = cp5.addSlider("s_dark")
+      .setRange(0,255)
+      .setValue(s_dark)
+      ;
+    Sizer slider_sortingOptions = new Sizer("sortingOptions", true, 20);
+    slider_sortingOptions.addItem(displayBounds);
+    slider_sortingOptions.addItem(bright);
+    slider_sortingOptions.addItem(dark);
+
+
+    // Sizer slider_thresholds = new Sizer("thresholds", true, 20);
+    // Sizer slider_randomOptions = new Sizer("slider_randomOptions", true, 20);
+
+    sizer.addItem(slider_sortingOptions);
+    // sizer.addItem(slider_thresholds);
+    // sizer.addItem(slider_randomOptions);
+
+    resize();
+  }
+
+  void resize(){
+
+  }
+}
+
+
+
+/*    cp5.addSlider("s_bright")
+    .setPosition(width/2 - s_w/2, height - (s_h + b)*2)
+    .setSize(s_w, s_h)
+    .setRange(0,255)
+    .setValue(s_bright)
+    ;
+    cp5.addSlider("s_dark")
+    .setPosition(width/2 - s_w/2, height - (s_h + b))
+    .setSize(s_w, s_h)
+    .setRange(0,255)
+    .setValue(s_dark)
+    ; 
+
+
+    cp5.addToggle("b_displayBounds")
+    .setPosition(width/4 - s_w/2, height - (s_h + b)*3)
+    .setSize(s_w, s_h)
+    .setValue(false)
+    ;
+
+    cp5.addToggle("b_vIndexAscending")
+    .setPosition(width/4 - s_w/2, height - (s_h + b)*2)
+    .setSize(s_w, s_h)
+    .setValue(true)
+    ;
+    cp5.addToggle("b_vValueAscending")
+    .setPosition(width/4 - s_w/2, height - (s_h + b))
+    .setSize(s_w, s_h)
+    .setValue(false)
+    ;
+
+
+    // Random Sorting
+    cp5.addToggle("b_randomSelect")
+    .setPosition(width/4*3 - s_w/2, height - (s_h + b)*3)
+    .setSize(s_w, s_h)
+    .setValue(false)
+    ;
+
+    cp5.addSlider("s_randomSpread")
+    .setPosition(width/4*3 - s_w/2, height - (s_h + b)*2)
+    .setSize(s_w, s_h)
+    .setRange(0,width)
+    .setValue(s_bright)
+    ;
+    cp5.addSlider("s_randomWidth")
+    .setPosition(width/4*3 - s_w/2, height - (s_h + b))
+    .setSize(s_w, s_h)
+    .setRange(0,width)
+    .setValue(s_dark)
+    ; */
